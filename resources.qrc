@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>assets/enabled.png</file>
+        <file>assets/skull_blue.png</file>
+        <file>assets/stop.png</file>
+        <file>assets/critical.png</file>
+        <file>assets/info.png</file>
+        <file>assets/warning.png</file>
+        <file>assets/skull.png</file>
+        <file>assets/power.png</file>
+    </qresource>
+</RCC>
