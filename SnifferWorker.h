@@ -26,8 +26,6 @@ signals:
     void stats(TraficStats ts);
     void activity(AppActivity aa);
 
-    void hostFound(Tins::IPv4Address aa);
-
 public slots:
     void startSniffer(Tins::NetworkInterface nif);
     void stopSniffer();

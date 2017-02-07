@@ -238,6 +238,7 @@ void MainWindow::scaneLan()
 
     connect(scanner, &LanScannerTask::hostFound, this, &MainWindow::scaneLanFound);
     connect(scanner, &LanScannerTask::finished, progress, &QProgressDialog::accept);
+    connect(scanner, &LanScannerTask::finished, scanner, &LanScannerTask::deleteLater);
 
     QThreadPool::globalInstance()->start(scanner);
 

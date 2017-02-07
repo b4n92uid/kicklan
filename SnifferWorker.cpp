@@ -29,7 +29,7 @@ void SnifferWorker::startSniffer(NetworkInterface nif)
     SnifferConfiguration config;
     config.set_promisc_mode(true);
     config.set_immediate_mode(true);
-    config.set_filter("tcp && icmp");
+    config.set_filter("tcp");
 
     m_running = true;
 
@@ -49,30 +49,18 @@ bool SnifferWorker::processPacket(PDU &pdu)
 {
     try {
         IP& ip = pdu.rfind_pdu<IP>();
+        TCP& tcp = ip.rfind_pdu<TCP>();
 
-        TCP* tcp = ip.find_pdu<TCP>();
+        TraficStats ts;
+        ts.srcIsPrivate = ip.src_addr().is_private();
+        ts.ipSrc= QString::fromStdString(ip.src_addr().to_string());
+        ts.ipDst= QString::fromStdString(ip.dst_addr().to_string());
+        ts.size = pdu.size();
+        ts.portDst = tcp.dport();
 
-        if(tcp)
-        {
-            TraficStats ts;
-            ts.srcIsPrivate = ip.src_addr().is_private();
-            ts.ipSrc= QString::fromStdString(ip.src_addr().to_string());
-            ts.ipDst= QString::fromStdString(ip.dst_addr().to_string());
-            ts.size = pdu.size();
-            ts.portDst = tcp->dport();
-    
-            m_follower.process_packet(pdu);
-    
-            emit stats(ts);
-        }
+        m_follower.process_packet(pdu);
 
-        ICMP* icmp = ip.find_pdu<ICMP>();
-
-        if(icmp)
-        {
-            if(icmp->code() == ICMP::ECHO_REQUEST)
-                emit hostFound(ip.src_addr());
-        }
+        emit stats(ts);
 
     } catch (pdu_not_found& e) {
         qWarning() << e.what();
