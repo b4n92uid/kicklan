@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -35,12 +35,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     ArpSpoofing.cpp \
     StatsModel.cpp \
-    SnifferWorker.cpp
+    SnifferWorker.cpp \
+    LanScannerTask.cpp
 
 HEADERS  += mainwindow.h \
     ArpSpoofing.h \
     StatsModel.h \
-    SnifferWorker.h
+    SnifferWorker.h \
+    LanScannerTask.h
 
 FORMS    += \
     MainWindow.ui

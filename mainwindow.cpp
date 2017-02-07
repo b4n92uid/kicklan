@@ -3,7 +3,11 @@
 
 #include <QDebug>
 #include <QDateTime>
+#include <QThreadPool>
+#include <QProgressDialog>
 #include <QTimer>
+
+#include "LanScannerTask.h"
 
 using namespace Tins;
 using namespace std;
@@ -30,8 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::startSniffer, m_sniffer, &SnifferWorker::startSniffer);
     connect(this, &MainWindow::stopSniffer, m_sniffer, &SnifferWorker::stopSniffer);
 
-    connect(m_sniffer, &SnifferWorker::emitStats, this, &MainWindow::parseStats);
-    connect(m_sniffer, &SnifferWorker::emitActivity, this, &MainWindow::parseActivity);
+    connect(m_sniffer, &SnifferWorker::stats, this, &MainWindow::parseStats);
+    connect(m_sniffer, &SnifferWorker::activity, this, &MainWindow::parseActivity);
 
     m_sniffer->moveToThread(&m_workerThread);
 
@@ -220,4 +224,39 @@ void MainWindow::parseActivity(AppActivity aa)
     UserStats* us = m_statsModel->find(aa.ip);
 
     us->activity << aa;
+}
+
+void MainWindow::scaneLan()
+{
+    QThreadPool::globalInstance()->setMaxThreadCount(256);
+
+    QProgressDialog* progress = new QProgressDialog(tr("Scanning for hosts"), "Cancel", 0, 0, this);
+    progress->setWindowModality(Qt::WindowModal);
+
+    LanScannerTask* scanner = new LanScannerTask(m_nifDefault);
+    scanner->setAutoDelete(false);
+
+    connect(scanner, &LanScannerTask::hostFound, this, &MainWindow::scaneLanFound);
+    connect(scanner, &LanScannerTask::finished, progress, &QProgressDialog::accept);
+
+    QThreadPool::globalInstance()->start(scanner);
+
+    progress->exec();
+}
+
+void MainWindow::scaneLanFound(IPv4Address host)
+{
+    QString ip = QString::fromStdString(host.to_string());
+
+    qDebug() << "FOUND" << ip;
+
+    UserStats* us = m_statsModel->find(ip);
+
+    if(!us)
+    {
+        us = new UserStats(ip);
+        us->name = UserStats::getHostByAddr(ip);
+
+        m_statsModel->insert(us);
+    }
 }

@@ -23,8 +23,10 @@ public:
     void processClientData(Tins::TCPIP::Stream& stream);
 
 signals:
-    void emitStats(TraficStats ts);
-    void emitActivity(AppActivity aa);
+    void stats(TraficStats ts);
+    void activity(AppActivity aa);
+
+    void hostFound(Tins::IPv4Address aa);
 
 public slots:
     void startSniffer(Tins::NetworkInterface nif);
