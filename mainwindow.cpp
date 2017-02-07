@@ -159,6 +159,7 @@ void MainWindow::toggleSpoofing(bool status)
         log(QtInfoMsg, "Start monitoring");
 
         m_workerTimer.start(ui->rate->value());
+
         ui->rate->setEnabled(false);
 
         emit startSniffer(m_nifDefault);
@@ -219,6 +220,8 @@ void MainWindow::parseStats(TraficStats ts)
 
             m_statsModel->insert(srcus);
 
+            m_spoofer->enableIp(ts.ipSrc, true);
+
             log(QtInfoMsg, QString("Host found `%1`").arg(ts.ipSrc));
         }
     }
@@ -276,5 +279,7 @@ void MainWindow::scaneLanFound(IPv4Address host, QString hostname)
         us->name = hostname;
 
         m_statsModel->insert(us);
+
+        m_spoofer->enableIp(ip, true);
     }
 }

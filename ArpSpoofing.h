@@ -2,6 +2,7 @@
 #define ARPSPOOFING_H
 
 #include <QObject>
+#include <QMap>
 
 #include <tins/tins.h>
 
@@ -17,6 +18,9 @@ public:
     Tins::IPv4Address gatewayIp() const;
     void setGatewayIp(const Tins::IPv4Address &gatewayIp);
 
+    void enableIp(QString ip, bool enabled);
+    void enableIp(Tins::IPv4Address ip, bool enabled);
+
 signals:
 
 public slots:
@@ -27,6 +31,7 @@ private:
 private:
     Tins::IPv4Address m_gatewayIp;
     Tins::NetworkInterface m_interface;
+    QMap<Tins::IPv4Address, bool> m_iplist;
 };
 
 #endif // ARPSPOOFING_H
