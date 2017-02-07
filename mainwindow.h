@@ -33,7 +33,7 @@ signals:
 public slots:
     void log(QtMsgType type, QString msg);
 
-    void selectInterfaceMenu(bool status);
+    void selectInterfaceMenu();
     void selectInterface(Tins::NetworkInterface nif);
 
     void toggleSpoofing(bool status);
@@ -53,7 +53,7 @@ private:
     QStandardItemModel* m_logModel;
 
     QTimer m_workerTimer;
-    ArpSpoofing* m_spoofing;
+    ArpSpoofing* m_spoofer;
 
     SnifferWorker* m_sniffer;
 

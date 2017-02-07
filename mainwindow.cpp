@@ -23,15 +23,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->kicklan, SIGNAL(clicked(bool)), this, SLOT(toggleSpoofing(bool)));
     connect(ui->stopForward, SIGNAL(clicked(bool)), this, SLOT(toggleForward(bool)));
 
-    m_spoofing = new ArpSpoofing(this);
-    connect(&m_workerTimer, SIGNAL(timeout()), m_spoofing, SLOT(doSpoofing()));
+    m_spoofer = new ArpSpoofing(this);
+    connect(&m_workerTimer, SIGNAL(timeout()), m_spoofer, SLOT(doSpoofing()));
 
     m_sniffer = new SnifferWorker;
-    connect(this, &MainWindow::startSniffer, m_sniffer, &SnifferWorker::startSniffer);
-    connect(this, &MainWindow::stopSniffer, m_sniffer, &SnifferWorker::stopSniffer);
+    connect(this, &MainWindow::startSniffer, m_sniffer, &SnifferWorker::startSniffer, Qt::QueuedConnection);
+    connect(this, &MainWindow::stopSniffer, m_sniffer, &SnifferWorker::stopSniffer, Qt::QueuedConnection);
 
-    connect(m_sniffer, &SnifferWorker::emitStats, this, &MainWindow::parseStats);
-    connect(m_sniffer, &SnifferWorker::emitActivity, this, &MainWindow::parseActivity);
+    connect(m_sniffer, &SnifferWorker::emitStats, this, &MainWindow::parseStats, Qt::QueuedConnection);
+    connect(m_sniffer, &SnifferWorker::emitActivity, this, &MainWindow::parseActivity, Qt::QueuedConnection);
 
     m_sniffer->moveToThread(&m_workerThread);
 
@@ -61,7 +61,7 @@ void MainWindow::init()
 
     log(QtDebugMsg, "Fetch available interfaces");
 
-    selectInterface(NetworkInterface::default_interface());
+    NetworkInterface defnif = NetworkInterface::default_interface();
 
     QMenu* menuInterfaces = new QMenu(tr("Interfaces"), this);
     QActionGroup* group = new QActionGroup(menuInterfaces);
@@ -80,8 +80,11 @@ void MainWindow::init()
 
         connect(nif_action, SIGNAL(triggered(bool)), this, SLOT(selectInterfaceMenu(bool)));
 
-        if(nif == m_nifDefault)
+        if(nif == defnif)
+        {
+            selectInterface(nif);
             nif_action->setChecked(true);
+        }
 
         menuInterfaces->addAction(nif_action);
     }
@@ -118,7 +121,7 @@ void MainWindow::log(QtMsgType type, QString msg)
     m_logModel->appendRow(item);
 }
 
-void MainWindow::selectInterfaceMenu(bool status)
+void MainWindow::selectInterfaceMenu()
 {
     int index = qobject_cast<QAction*>(sender())->data().toInt();
 
@@ -128,9 +131,15 @@ void MainWindow::selectInterfaceMenu(bool status)
 
 void MainWindow::selectInterface(NetworkInterface nif)
 {
-    log(QtInfoMsg, QString("Select `%1`").arg(QString::fromStdWString(nif.friendly_name())));
+    log(QtInfoMsg, QString("Select `%1` as default interface").arg(QString::fromStdWString(nif.friendly_name())));
 
     m_nifDefault = nif;
+
+    IPv4Address gateway;
+    Tins::Utils::gateway_from_ip(nif.ipv4_address(), gateway);
+
+    m_spoofer->setInterface(nif);
+    m_spoofer->setGatewayIp(gateway);
 
     updateStatus();
 }
