@@ -16,6 +16,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+
     ui->setupUi(this);
 
     m_statsModel = new StatsModel(this);
@@ -26,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->kicklan, SIGNAL(clicked(bool)), this, SLOT(toggleSpoofing(bool)));
     connect(ui->stopForward, SIGNAL(clicked(bool)), this, SLOT(toggleForward(bool)));
+    connect(ui->scanlan, SIGNAL(clicked()), this, SLOT(scaneLan()));
 
     m_spoofer = new ArpSpoofing(this);
     connect(&m_workerTimer, SIGNAL(timeout()), m_spoofer, SLOT(doSpoofing()));
@@ -82,7 +86,7 @@ void MainWindow::init()
         nif_action->setActionGroup(group);
         nif_action->setData(nif.id());
 
-        connect(nif_action, SIGNAL(triggered(bool)), this, SLOT(selectInterfaceMenu(bool)));
+        connect(nif_action, SIGNAL(triggered()), this, SLOT(selectInterfaceMenu()));
 
         if(nif == defnif)
         {
@@ -209,11 +213,13 @@ void MainWindow::parseStats(TraficStats ts)
         {
             srcus = new UserStats(ts.ipSrc);
 
-            srcus->name = UserStats::getHostByAddr(ts.ipSrc);
+            srcus->name = UserStats::getHostByAddr(ts.ipSrc).hostName();
             srcus->recordDownload(ts.size);
             srcus->recordTrafficType(ts.portDst);
 
             m_statsModel->insert(srcus);
+
+            log(QtInfoMsg, QString("Host found `%1`").arg(ts.ipSrc));
         }
     }
 
@@ -237,7 +243,8 @@ void MainWindow::parseActivity(AppActivity aa)
 
 void MainWindow::scaneLan()
 {
-    QThreadPool::globalInstance()->setMaxThreadCount(256);
+    QThreadPool::globalInstance()->setMaxThreadCount(260);
+    QThreadPool::globalInstance()->setExpiryTimeout(1000);
 
     QProgressDialog* progress = new QProgressDialog(tr("Scanning for hosts"), "Cancel", 0, 0, this);
     progress->setWindowModality(Qt::WindowModal);
@@ -245,27 +252,28 @@ void MainWindow::scaneLan()
     LanScannerTask* scanner = new LanScannerTask(m_nifDefault);
     scanner->setAutoDelete(false);
 
-    connect(scanner, &LanScannerTask::hostFound, this, &MainWindow::scaneLanFound);
+    connect(scanner, &LanScannerTask::hostFound, this, &MainWindow::scaneLanFound, Qt::QueuedConnection);
+
     connect(scanner, &LanScannerTask::finished, progress, &QProgressDialog::accept);
     connect(scanner, &LanScannerTask::finished, scanner, &LanScannerTask::deleteLater);
 
-    QThreadPool::globalInstance()->start(scanner);
+    QThreadPool::globalInstance()->start(scanner, 1);
 
     progress->exec();
 }
 
-void MainWindow::scaneLanFound(IPv4Address host)
+void MainWindow::scaneLanFound(IPv4Address host, QString hostname)
 {
     QString ip = QString::fromStdString(host.to_string());
 
-    qDebug() << "FOUND" << ip;
+    log(QtInfoMsg, QString("Host found `%1`").arg(ip));
 
     UserStats* us = m_statsModel->find(ip);
 
     if(!us)
     {
         us = new UserStats(ip);
-        us->name = UserStats::getHostByAddr(ip);
+        us->name = hostname;
 
         m_statsModel->insert(us);
     }

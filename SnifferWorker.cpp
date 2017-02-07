@@ -24,8 +24,6 @@ SnifferWorker::SnifferWorker(QObject *parent) : QObject(parent)
 
 void SnifferWorker::startSniffer(NetworkInterface nif)
 {
-    qDebug() << "startSniffer";
-
     SnifferConfiguration config;
     config.set_promisc_mode(true);
     config.set_immediate_mode(true);
@@ -39,8 +37,6 @@ void SnifferWorker::startSniffer(NetworkInterface nif)
 
 void SnifferWorker::stopSniffer()
 {
-    qDebug() << "stopSniffer";
-
     m_running = false;
     delete m_sniffer, m_sniffer = NULL;
 }

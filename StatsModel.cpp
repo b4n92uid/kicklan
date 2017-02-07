@@ -1,6 +1,5 @@
 #include "StatsModel.h"
 
-#include <QDateTime>
 #include <QDebug>
 
 StatsModel::StatsModel(QObject *parent) : QAbstractTableModel(parent)
@@ -187,40 +186,64 @@ void UserStats::recordTrafficType(int port)
 QString UserStats::getTrafficTypeByPort(int port)
 {
     switch(port) {
-        case 80:
-        case 443:
-            return "Browsing";
-            break;
-        case 20:
-        case 21:
-            return "FTP";
-            break;
-        case 22:
-            return "SSH";
-            break;
-        case 25:
-        case 109:
-        case 110:
-            return "Mailing";
-            break;
-        case 5938:
-            return "TeamViewer";
-            break;
+      case 80:
+        return "Browsing";
 
-        default:
-            return QString("Port %1").arg(port);
+      case 443:
+        return "Browsing HTTPS";
+
+      case 20:
+      case 21:
+        return "FTP";
+
+      case 22:
+        return "SSH";
+
+      case 25:
+      case 109:
+      case 110:
+        return "Mailing";
+
+      case 5938:
+        return "TeamViewer";
+
+      default:
+        return QString("Port %1").arg(port);
     }
 }
 
-QString UserStats::getHostByAddr(QString ip)
+QHostInfo UserStats::getHostByAddr(std::string ip)
+{
+    return getHostByAddr(QString::fromStdString(ip));
+}
+
+QHostInfo UserStats::getHostByAddr(QString ip)
 {
     in_addr addr;
     addr.s_addr = inet_addr(ip.toLocal8Bit().data());
 
     hostent* host = gethostbyaddr((char*)&addr, 4, AF_INET);
 
+    QHostInfo info;
+
     if(host)
-        return QString(host->h_name);
+    {
+        info.setHostName(host->h_name);
+    }
     else
-        return QString("N/A");
+    {
+        DWORD dwError = WSAGetLastError();
+
+        switch(dwError)
+        {
+        case WSAHOST_NOT_FOUND:
+            info.setError(QHostInfo::HostNotFound);
+            break;
+
+        default:
+            info.setError(QHostInfo::UnknownError);
+        }
+    }
+
+    return info;
 }

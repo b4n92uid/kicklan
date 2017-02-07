@@ -3,10 +3,10 @@
 
 #include <QList>
 #include <QAbstractTableModel>
+#include <QHostInfo>
+#include <QDateTime>
 
 #include <tins/tins.h>
-
-#include <QDateTime>
 
 struct AppActivity {
     QString ip;
@@ -47,7 +47,8 @@ public:
 
     static QString getTrafficTypeByPort(int port);
 
-    static QString getHostByAddr(QString ip);
+    static QHostInfo getHostByAddr(std::string ip);
+    static QHostInfo getHostByAddr(QString ip);
 
     typedef QMap<int, int> PortTraffic;
 

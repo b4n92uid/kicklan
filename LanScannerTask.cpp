@@ -1,5 +1,7 @@
 #include "LanScannerTask.h"
 #include <QThreadPool>
+#include <QThread>
+#include "StatsModel.h"
 
 using namespace Tins;
 
@@ -16,10 +18,13 @@ void LanScannerTask::run()
 
     IPv4Range range = IPv4Range::from_mask(gateway, m_nif.ipv4_mask());
 
+    m_rangeSize = 0;
+    m_status.clear();
+
     for(const IPv4Address& addr : range)
     {
         ArpRequest* arpr = new ArpRequest(m_nif, addr);
-        connect(arpr, &ArpRequest::hostStatus, this, &LanScannerTask::reply);
+        connect(arpr, &ArpRequest::hostStatus, this, &LanScannerTask::reply, Qt::QueuedConnection);
 
         QThreadPool::globalInstance()->start(arpr);
 
@@ -27,14 +32,14 @@ void LanScannerTask::run()
     }
 }
 
-void LanScannerTask::reply(IPv4Address addr, bool status)
+void LanScannerTask::reply(IPv4Address addr, QString name, bool status)
 {
     m_status[addr.to_string().data()] = status;
 
-    qDebug() << "REPLY" << addr.to_string().data() << status;
-
     if(status)
-        emit hostFound(addr);
+    {
+        emit hostFound(addr, name);
+    }
 
     if(m_status.count() >= m_rangeSize)
         emit finished();
@@ -48,17 +53,11 @@ ArpRequest::ArpRequest(NetworkInterface nif, IPv4Address target)
 
 void ArpRequest::run()
 {
-    qDebug() << "TEST" << m_target.to_string().data();
+    QHostInfo host = UserStats::getHostByAddr(m_target.to_string());
 
-    try {
-        PacketSender sender;
-        Utils::resolve_hwaddr(m_nif, m_target, sender);
+    if(host.error() == QHostInfo::NoError)
+        emit hostStatus(m_target, host.hostName(), true);
+    else
+        emit hostStatus(m_target, QString(), false);
 
-        emit hostStatus(m_target, true);
-
-    } catch (std::exception&) {
-        emit hostStatus(m_target, false);
-
-
-    }
 }

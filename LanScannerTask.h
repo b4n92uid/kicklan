@@ -14,7 +14,7 @@ public:
     ArpRequest(Tins::NetworkInterface nif, Tins::IPv4Address target);
 
 signals:
-    void hostStatus(Tins::IPv4Address, bool);
+    void hostStatus(Tins::IPv4Address, QString, bool);
 
 protected:
     void run();
@@ -32,14 +32,14 @@ public:
     LanScannerTask(Tins::NetworkInterface nif);
 
 public slots:
-    void reply(Tins::IPv4Address addr, bool status);
+    void reply(Tins::IPv4Address addr, QString name, bool status);
 
 protected:
     void run();
 
 signals:
     void finished();
-    void hostFound(Tins::IPv4Address);
+    void hostFound(Tins::IPv4Address, QString);
 
 private:
     Tins::NetworkInterface m_nif;

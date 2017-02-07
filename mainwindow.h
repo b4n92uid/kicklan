@@ -46,7 +46,7 @@ public slots:
     void parseActivity(AppActivity aa);
 
     void scaneLan();
-    void scaneLanFound(Tins::IPv4Address host);
+    void scaneLanFound(Tins::IPv4Address host, QString hostname);
 
 private:
     Ui::MainWindow *ui;
