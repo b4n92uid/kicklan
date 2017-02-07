@@ -28,6 +28,7 @@ void SnifferWorker::startSniffer(NetworkInterface nif)
 
     SnifferConfiguration config;
     config.set_promisc_mode(true);
+    config.set_immediate_mode(true);
     config.set_filter("tcp");
 
     m_running = true;
@@ -59,7 +60,7 @@ bool SnifferWorker::processPacket(PDU &pdu)
 
         m_follower.process_packet(pdu);
 
-        emit emitStats(ts);
+        emit stats(ts);
 
     } catch (pdu_not_found& e) {
         qWarning() << e.what();
@@ -113,5 +114,5 @@ void SnifferWorker::processClientData(TCPIP::Stream &stream)
 
     aa.date = QDateTime::currentDateTime();
 
-    emit emitActivity(aa);
+    emit activity(aa);
 }

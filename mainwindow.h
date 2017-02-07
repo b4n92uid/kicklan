@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QThread>
+#include <QHostInfo>
 
 #include <tins/tins.h>
 
@@ -43,6 +44,9 @@ public slots:
 
     void parseStats(TraficStats ts);
     void parseActivity(AppActivity aa);
+
+    void scaneLan();
+    void scaneLanFound(Tins::IPv4Address host);
 
 private:
     Ui::MainWindow *ui;

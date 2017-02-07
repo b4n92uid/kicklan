@@ -4,6 +4,7 @@
 #include "StatsModel.h"
 
 Q_DECLARE_METATYPE(Tins::NetworkInterface)
+Q_DECLARE_METATYPE(Tins::IPv4Address)
 Q_DECLARE_METATYPE(TraficStats)
 Q_DECLARE_METATYPE(AppActivity)
 
@@ -13,11 +14,13 @@ int main(int argc, char *argv[])
     a.setStyle(QStyleFactory::create("Fusion"));
 
     qRegisterMetaType<Tins::NetworkInterface>();
+    qRegisterMetaType<Tins::IPv4Address>();
     qRegisterMetaType<TraficStats>();
     qRegisterMetaType<AppActivity>();
 
     MainWindow w;
     w.show();
+    w.scaneLan();
 
     return a.exec();
 }
