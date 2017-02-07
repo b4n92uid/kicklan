@@ -143,11 +143,7 @@ void MainWindow::selectInterface(NetworkInterface nif)
 
     m_nifDefault = nif;
 
-    IPv4Address gateway;
-    Tins::Utils::gateway_from_ip(nif.ipv4_address(), gateway);
-
-    m_spoofer->setInterface(nif);
-    m_spoofer->setGatewayIp(gateway);
+    m_spoofer->init(nif);
 
     updateStatus();
 }

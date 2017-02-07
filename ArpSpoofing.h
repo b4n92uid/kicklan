@@ -12,11 +12,7 @@ class ArpSpoofing : public QObject
 public:
     explicit ArpSpoofing(QObject *parent = 0);
 
-    Tins::NetworkInterface interface() const;
-    void setInterface(const Tins::NetworkInterface &interface);
-
-    Tins::IPv4Address gatewayIp() const;
-    void setGatewayIp(const Tins::IPv4Address &gatewayIp);
+    void init(const Tins::NetworkInterface &interface);
 
     void enableIp(QString ip, bool enabled);
     void enableIp(Tins::IPv4Address ip, bool enabled);
@@ -29,9 +25,17 @@ public slots:
 private:
 
 private:
-    Tins::IPv4Address m_gatewayIp;
+    typedef Tins::IPv4Address Logical;
+    typedef Tins::EthernetII::address_type Hardware;
+
+    Logical m_gatewayIp;
+    Hardware m_gatewayHw;
+
     Tins::NetworkInterface m_interface;
-    QMap<Tins::IPv4Address, bool> m_iplist;
+    QMap<Logical, bool> m_iplist;
+    QMap<Logical, Hardware> m_iphw;
+
+    Tins::PacketSender m_sender;
 };
 
 #endif // ARPSPOOFING_H

