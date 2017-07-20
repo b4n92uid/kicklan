@@ -6,6 +6,7 @@
 #include <QThreadPool>
 #include <QProgressDialog>
 #include <QTimer>
+#include <QMessageBox>
 
 #include "LanScannerTask.h"
 
@@ -44,8 +45,6 @@ MainWindow::MainWindow(QWidget *parent) :
     m_sniffer->moveToThread(&m_workerThread);
 
     m_workerThread.start();
-
-    init();
 }
 
 MainWindow::~MainWindow()
@@ -143,7 +142,13 @@ void MainWindow::selectInterface(NetworkInterface nif)
 
     m_nifDefault = nif;
 
-    m_spoofer->init(nif);
+    try {
+      m_spoofer->init(nif);
+
+    } catch (std::exception &e) {
+      QMessageBox::critical(this, "Interface error", e.what());
+
+    }
 
     updateStatus();
 }

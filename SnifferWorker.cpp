@@ -29,10 +29,15 @@ void SnifferWorker::startSniffer(NetworkInterface nif)
     config.set_immediate_mode(true);
     config.set_filter("tcp");
 
-    m_running = true;
+    try {
+      m_sniffer = new Sniffer(nif.name(), config);
+      m_sniffer->sniff_loop(make_sniffer_handler(this, &SnifferWorker::processPacket));
+      m_running = true;
 
-    m_sniffer = new Sniffer(nif.name(), config);
-    m_sniffer->sniff_loop(make_sniffer_handler(this, &SnifferWorker::processPacket));
+    } catch (std::exception &e) {
+      qCritical() << e.what();
+
+    }
 }
 
 void SnifferWorker::stopSniffer()

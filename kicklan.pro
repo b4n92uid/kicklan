@@ -18,7 +18,7 @@ CONFIG += c++11
 # any feature of Qt which as been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS TINS_STATIC
+DEFINES += QT_DEPRECATED_WARNINGS TINS_STATIC WIN32
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -30,6 +30,9 @@ INCLUDEPATH += $${LIBTINS_INCLUDE_DIR} $${WPCAP_INCLUDE_DIR} $${BOOST_INCLUDE_DI
 LIBS += -L$${WPCAP_LIB_DIR} -L$${LIBTINS_LIB_DIR}
 
 LIBS += -ltins -lwpcap -lIphlpapi -lWs2_32
+
+Release:DESTDIR = ../release
+Debug:DESTDIR = ../debug
 
 SOURCES += main.cpp\
         mainwindow.cpp \

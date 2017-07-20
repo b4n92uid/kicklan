@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<AppActivity>();
 
     MainWindow w;
+    w.init();
     w.show();
     w.scaneLan();
 
